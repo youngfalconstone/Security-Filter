@@ -16,7 +16,10 @@ main.py — CLI only. Read input → call parser → extractors → rules → sc
 config.yaml — all tunables: weights, thresholds, regex patterns, shortener domain list
 
 # Run
-pip install pyyaml
-python main.py --type email --file sample.eml
-python main.py --type sms --file sample.txt --json
+pip install pyyaml  
+
+python main.py --type email --file sample.eml  
+
+python main.py --type sms --file sample.txt --json  
+
 cat sample.eml | python main.py --type email
