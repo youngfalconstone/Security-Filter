@@ -1,0 +1,56 @@
+thresholds:
+  suspicious: 0.40
+  phishing: 0.70
+ 
+weights:
+  homograph_detected: 0.85
+  sender_mismatch: 0.75
+  url_shortener: 0.40
+  urgency_language: 0.45
+  hidden_elements: 0.60
+  credential_request: 0.80
+  mismatched_link_text: 0.65
+ 
+patterns:
+  urgency_phrases:
+    - "verify your account"
+    - "unusual sign-in activity"
+    - "your account will be suspended"
+    - "confirm your identity"
+    - "immediate action required"
+    - "click here to avoid"
+    - "your password has expired"
+    - "unauthorized access detected"
+    - "update your billing"
+    - "limited time"
+ 
+  credential_phrases:
+    - "enter your password"
+    - "confirm your ssn"
+    - "provide your credit card"
+    - "enter your pin"
+    - "verify your social security"
+ 
+  known_shorteners:
+    - bit.ly
+    - t.co
+    - tinyurl.com
+    - ow.ly
+    - goo.gl
+    - rb.gy
+    - is.gd
+    - shorte.st
+    - adf.ly
+ 
+  homograph_targets:
+    - paypal
+    - amazon
+    - apple
+    - microsoft
+    - google
+    - facebook
+    - netflix
+    - bankofamerica
+    - wellsfargo
+    - chase
+
