@@ -1,4 +1,4 @@
-""
+"""
 scorer.py
 Aggregates RuleResults into a weighted composite score and verdict.
 All weights and thresholds come from config.yaml.
