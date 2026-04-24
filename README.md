@@ -14,3 +14,9 @@ scorer.py — takes rule results, applies weights from config.yaml, returns fina
 main.py — CLI only. Read input → call parser → extractors → rules → scorer → print report  
 
 config.yaml — all tunables: weights, thresholds, regex patterns, shortener domain list
+
+# Run
+pip install pyyaml
+python main.py --type email --file sample.eml
+python main.py --type sms --file sample.txt --json
+cat sample.eml | python main.py --type email
