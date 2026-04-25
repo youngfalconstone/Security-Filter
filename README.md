@@ -3,17 +3,17 @@ Static analysis engine for detecting phishing indicators in email and SMS conten
 Made as a practice project.
 
 # Structure
-parser.py — ingests raw email or SMS, returns a normalized dict with body, headers, urls, sender  
+parser.py : ingests raw email or SMS, returns a dict with body, headers, urls, sender  
 
-extractors.py — runs feature extraction on that dict: homograph detection, urgency phrases, structural flags. Returns a flat features: dict  
+extractors.py : runs feature extraction on that dict - homograph detection, urgency phrases, structural flags. returns a flat features: dict  
 
-rules.py — stateless functions, each takes features, returns (rule_id, triggered: bool, confidence: float). No weights here.  
+rules.py : stateless functions, each takes features, returns (rule_id, triggered: bool, confidence: float).
 
-scorer.py — takes rule results, applies weights from config.yaml, returns final score + verdict string  
+scorer.py : takes rule results, applies weights from config.yaml, returns final weighed score + verdict  
 
-main.py — CLI only. Read input → call parser → extractors → rules → scorer → print report  
+main.py : CLI only! Read input, call parser, extractors, rules, scorer, then report  
 
-config.yaml — all tunables: weights, thresholds, regex patterns, shortener domain list
+config.yaml : all editable: weights, thresholds, regex patterns, shortener domain list, etc
 
 # Run
 pip install pyyaml  
