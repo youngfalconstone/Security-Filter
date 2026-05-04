@@ -16,36 +16,43 @@ def parse(raw: str, input_type: Literal["email", "sms"]) -> dict:
         return _parse_sms(raw)
     else:
         raise ValueError(f"Unsupported input_type: {input_type}")
+ #take email or sms as input, then route depending on input type
  
- 
-def _parse_email(raw: str) -> dict:
-    msg = email.message_from_string(raw, policy=policy.default)
+def _parse_email(raw: str) -> dict: #note: remember this syntax - expect a str, and return dict
+    msg = email.message_from_string(raw, policy=policy.default) #convert raw (str) to traversable object (headers, content type, etc)
  
     body = ""
     html_body = ""
  
-    if msg.is_multipart():
+    if msg.is_multipart(): #check attribute multipart of the traversable object
         for part in msg.walk():
+         #ct stands for content type :)
             ct = part.get_content_type()
             if ct == "text/plain":
+             #accumulate into body
                 body += part.get_content() or ""
             elif ct == "text/html":
+             #accumulate into html_body
                 html_body += part.get_content() or ""
     else:
         ct = msg.get_content_type()
         if ct == "text/html":
+         #accumulate into html_body
             html_body = msg.get_content() or ""
         else:
+         #accumulate into body
             body = msg.get_content() or ""
- 
-    # Fallback: strip HTML tags for plain body if only HTML present
+
+ #fallback: if email only has html, strip the html tags for body
     if not body and html_body:
         body = re.sub(r"<[^>]+>", " ", html_body)
- 
+     
+ #access object attributes for essential email data
     sender = str(msg.get("From", ""))
     reply_to = str(msg.get("Reply-To", ""))
     subject = str(msg.get("Subject", ""))
  
+ #access the urls with internal function
     urls = _extract_urls(body + " " + html_body)
  
     return {
@@ -61,7 +68,7 @@ def _parse_email(raw: str) -> dict:
  
  
 def _parse_sms(raw: str) -> dict:
-    # Normalize unicode lookalikes before processing
+    # for better processing ,normalize unicode lookalikes
     normalized = _normalize_unicode(raw)
     urls = _extract_urls(normalized)
  
@@ -76,16 +83,16 @@ def _parse_sms(raw: str) -> dict:
         "headers": {},
     }
  
- 
+ #use regex search to find urls
 def _extract_urls(text: str) -> list[str]:
     pattern = r'https?://[^\s\'"<>]+'
     return re.findall(pattern, text, re.IGNORECASE)
  
  
 def _normalize_unicode(text: str) -> str:
-    """
-    Naive unicode normalization: map common homoglyph characters to ASCII.
-    A production system would use the full confusables.txt dataset.
+#another quality of life function
+#map common homoglyph characters to ASCII.
+#note: a production system would use the full confusables.txt dataset.
     """
     replacements = {
         "\u0430": "a",  # Cyrillic а
