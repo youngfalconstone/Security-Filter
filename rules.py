@@ -1,8 +1,4 @@
-"""
-rules.py
-Stateless rule functions. Each takes the features dict and returns a RuleResult.
-No weights. No I/O. No side effects.
-"""
+#return result... no weighing involved
  
 from dataclasses import dataclass
 from typing import Callable
@@ -16,7 +12,7 @@ class RuleResult:
     evidence: str
  
  
-# --- Individual rules ---
+#individual rules
  
 def rule_homograph(features: dict) -> RuleResult:
     triggered = features.get("homograph_detected", False)
@@ -88,8 +84,7 @@ def rule_mismatched_link_text(features: dict) -> RuleResult:
     )
  
  
-# --- Rule registry ---
- 
+#all rules for iteration
 RULES: list[Callable[[dict], RuleResult]] = [
     rule_homograph,
     rule_sender_mismatch,
@@ -100,7 +95,7 @@ RULES: list[Callable[[dict], RuleResult]] = [
     rule_mismatched_link_text,
 ]
  
- 
+#function to iterate through rules to return ruleresult objects
 def evaluate(features: dict) -> list[RuleResult]:
     return [rule(features) for rule in RULES]
 
