@@ -1,21 +1,15 @@
-"""
-extractors.py
-Runs feature extraction on a parsed message dict.
-Returns a flat features dict consumed by rules.py.
-"""
- 
 import re
 from urllib.parse import urlparse
 import yaml
 from pathlib import Path
  
- 
+#read config.yaml from same directory as script...  supply phrase list and patterns used by extractors 
 def load_config() -> dict:
     config_path = Path(__file__).parent / "config.yaml"
     with open(config_path) as f:
         return yaml.safe_load(f)
- 
- 
+     
+#take dict from parser.py and runs each detector and returns flat boolean/value dict for rules.py
 def extract(parsed: dict) -> dict:
     cfg = load_config()
     patterns = cfg.get("patterns", {})
@@ -37,7 +31,7 @@ def extract(parsed: dict) -> dict:
         "mismatched_link_text": _check_mismatched_links(html_body),
     }
  
- 
+#extract domain from From and Reply-To via regex and return True if they are different
 def _check_sender_mismatch(sender: str, reply_to: str) -> bool:
     if not sender or not reply_to:
         return False
@@ -47,33 +41,32 @@ def _check_sender_mismatch(sender: str, reply_to: str) -> bool:
         return False
     return sender_domain != reply_domain
  
- 
+ #detect domain with regex
 def _extract_domain_from_address(addr: str) -> str:
     match = re.search(r"@([\w.\-]+)", addr)
     return match.group(1).lower() if match else ""
- 
- 
+
+#detect impersonating domains
 def _check_homograph(urls: list[str], targets: list[str]) -> bool:
-    """
-    Detect lookalike domains: e.g. paypa1.com, arnazon.com
-    Checks for known brand names with substituted characters.
-    """
+    #this makes a translation table
     substitutions = str.maketrans("0123456789", "oizeasbtgq")
  
     for url in urls:
         try:
             domain = urlparse(url).netloc.lower()
             normalized = domain.translate(substitutions)
-            # Strip common TLDs for matching
+            #strip common endings for better matching
             base = re.sub(r"\.(com|net|org|io|co|info|biz).*$", "", normalized)
+            #check if known brand name (e.g. "paypal") appears inside that normalized domain.
             for target in targets:
+                #exclude exact matches by reconstructing what real domain would look like and comparing it against the original
                 if target in base and domain != target + "." + domain.split(".")[-1]:
                     return True
         except Exception:
             continue
     return False
  
- 
+#immediately flag if a shortener is present
 def _check_shortener(urls: list[str], shorteners: list[str]) -> bool:
     for url in urls:
         try:
@@ -84,18 +77,12 @@ def _check_shortener(urls: list[str], shorteners: list[str]) -> bool:
             continue
     return False
  
- 
+ #return true if any phrase from list is shown. remember, the list can be edited in config.yaml
 def _check_phrases(body: str, phrases: list[str]) -> bool:
     return any(phrase in body for phrase in phrases)
  
- 
+#detect common HTML hiding techniques used in phishing
 def _check_hidden_elements(html: str) -> bool:
-    """
-    Detect common HTML hiding techniques used in phishing:
-    - display:none / visibility:hidden
-    - font-size:0
-    - opacity:0
-    """
     patterns = [
         r"display\s*:\s*none",
         r"visibility\s*:\s*hidden",
@@ -105,18 +92,16 @@ def _check_hidden_elements(html: str) -> bool:
     ]
     return any(re.search(p, html) for p in patterns)
  
- 
+#detect anchor tags where visible text contains url that's different from href destination
 def _check_mismatched_links(html: str) -> bool:
-    """
-    Detect anchor tags where visible text contains a URL
-    that differs from the href destination.
-    """
+    #use regex to determine pattern
     anchor_pattern = re.compile(
         r'<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
         re.IGNORECASE | re.DOTALL,
     )
+    #find http(s) urls in text
     url_in_text = re.compile(r'https?://[\w./\-]+')
- 
+    #finditer scans the full html and yields one match object per anchor tag found.
     for match in anchor_pattern.finditer(html):
         href = match.group(1).strip()
         text = re.sub(r"<[^>]+>", "", match.group(2)).strip()
