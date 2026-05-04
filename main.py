@@ -1,13 +1,3 @@
-"""
-main.py
-CLI entrypoint. No detection logic lives here.
- 
-Usage:
-    python main.py --type email --file sample.eml
-    python main.py --type sms --file sample.txt
-    cat sample.eml | python main.py --type email
-"""
- 
 import argparse
 import json
 import sys
