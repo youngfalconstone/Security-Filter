@@ -6,6 +6,8 @@ from parser import parse
 from extractors import extract
 from rules import evaluate
 from scorer import score
+
+MAX_INPUT_BYTES = 10 * 1024 * 1024
  
  
 def main():
@@ -32,12 +34,17 @@ def main():
     )
     args = parser.parse_args()
  
-    # Read input
+    # Read input. The message is untrusted, so it is read as bytes with a size cap and decoded leniently:
+    # an invalid byte or a huge attachment must not crash the analysis or keep it busy for long.
     if args.file:
-        with open(args.file, "r", encoding="utf-8") as f:
-            raw = f.read()
+        with open(args.file, "rb") as f:
+            data = f.read(MAX_INPUT_BYTES + 1)
     else:
-        raw = sys.stdin.read()
+        data = sys.stdin.buffer.read(MAX_INPUT_BYTES + 1)
+    if len(data) > MAX_INPUT_BYTES:
+        print(f"Error: input larger than {MAX_INPUT_BYTES // (1024 * 1024)} MB.", file=sys.stderr)
+        sys.exit(1)
+    raw = data.decode("utf-8", errors="replace")
  
     if not raw.strip():
         print("Error: empty input.", file=sys.stderr)

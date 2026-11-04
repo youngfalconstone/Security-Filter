@@ -83,6 +83,7 @@ def _check_phrases(body: str, phrases: list[str]) -> bool:
  
 #detect common HTML hiding techniques used in phishing
 def _check_hidden_elements(html: str) -> bool:
+    html = html[:MAX_HTML_CHARS]
     patterns = [
         r"display\s*:\s*none",
         r"visibility\s*:\s*hidden",
@@ -92,15 +93,19 @@ def _check_hidden_elements(html: str) -> bool:
     ]
     return any(re.search(p, html) for p in patterns)
  
+MAX_HTML_CHARS = 2_000_000  # analysis is capped here; a phishing message does not need more than this to be judged
+
 #detect anchor tags where visible text contains url that's different from href destination
 def _check_mismatched_links(html: str) -> bool:
-    #use regex to determine pattern
+    html = html[:MAX_HTML_CHARS]
+    #use regex to determine pattern. every repetition is bounded so a crafted message cannot make the
+    #engine backtrack for seconds (regular-expression denial of service)
     anchor_pattern = re.compile(
-        r'<a\s[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
-        re.IGNORECASE | re.DOTALL,
+        r'<a\s[^>]{0,500}?href=["\']([^"\']{1,2048})["\'][^>]{0,500}>([^<]{0,4000}(?:<(?!/a>)[^<]{0,4000}){0,50})</a>',
+        re.IGNORECASE,
     )
     #find http(s) urls in text
-    url_in_text = re.compile(r'https?://[\w./\-]+')
+    url_in_text = re.compile(r'https?://[\w./\-]{1,2048}')
     #finditer scans the full html and yields one match object per anchor tag found.
     for match in anchor_pattern.finditer(html):
         href = match.group(1).strip()

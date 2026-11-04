@@ -30,18 +30,18 @@ def _parse_email(raw: str) -> dict: #note: remember this syntax - expect a str, 
             ct = part.get_content_type()
             if ct == "text/plain":
              #accumulate into body
-                body += part.get_content() or ""
+                body += _content(part)
             elif ct == "text/html":
              #accumulate into html_body
-                html_body += part.get_content() or ""
+                html_body += _content(part)
     else:
         ct = msg.get_content_type()
         if ct == "text/html":
          #accumulate into html_body
-            html_body = msg.get_content() or ""
+            html_body = _content(msg)
         else:
          #accumulate into body
-            body = msg.get_content() or ""
+            body = _content(msg)
 
  #fallback: if email only has html, strip the html tags for body
     if not body and html_body:
@@ -67,6 +67,18 @@ def _parse_email(raw: str) -> dict: #note: remember this syntax - expect a str, 
     }
  
  
+def _content(part) -> str:
+    """Decoded text of one MIME part. The input is hostile by definition, so a part that cannot be decoded
+    (unknown charset, corrupt transfer encoding, non-text payload) becomes an empty string instead of an exception."""
+    try:
+        content = part.get_content()
+    except Exception:  # noqa: BLE001 - the email package raises many unrelated types here
+        return ""
+    if isinstance(content, bytes):
+        return content.decode("utf-8", errors="replace")
+    return content if isinstance(content, str) else ""
+
+
 def _parse_sms(raw: str) -> dict:
     # for better processing ,normalize unicode lookalikes
     normalized = _normalize_unicode(raw)
@@ -84,16 +96,17 @@ def _parse_sms(raw: str) -> dict:
     }
  
  #use regex search to find urls
+MAX_URLS = 500  # more than this in one message is noise; it also bounds the work every URL check does
+
+
 def _extract_urls(text: str) -> list[str]:
-    pattern = r'https?://[^\s\'"<>]+'
-    return re.findall(pattern, text, re.IGNORECASE)
+    pattern = r'https?://[^\s\'"<>]{1,2048}'
+    return re.findall(pattern, text, re.IGNORECASE)[:MAX_URLS]
  
  
 def _normalize_unicode(text: str) -> str:
-#another quality of life function
-#map common homoglyph characters to ASCII.
-#note: a production system would use the full confusables.txt dataset.
-    """
+    """Map common homoglyph characters to ASCII (a quality-of-life step).
+    A production system would use the full confusables.txt dataset."""
     replacements = {
         "\u0430": "a",  # Cyrillic а
         "\u0435": "e",  # Cyrillic е

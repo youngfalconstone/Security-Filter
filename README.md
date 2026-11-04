@@ -15,6 +15,11 @@ main.py : CLI only! Read input, call parser, extractors, rules, scorer, then rep
 
 config.yaml : all editable: weights, thresholds, regex patterns, shortener domain list, etc
 
+# Notes
+The input is treated as hostile: it is size-capped, decoded leniently, MIME parts that fail to decode are skipped,
+and every regular expression that runs over the message is bounded so a crafted message cannot stall the analysis.
+Use generative AI to make more sample messages for testing; `samples.eml` is one phishing example.
+
 # Run
 pip install pyyaml  
 
